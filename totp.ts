@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Original source: https://github.com/turistu/totp-in-javascript/blob/main/totp.js
+ * Author: turistu
  */
 
 

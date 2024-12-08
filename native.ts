@@ -12,7 +12,7 @@ import { ComponentDispatch } from "@webpack/common";
 let cookies: string[] = [];
 let userId: string | null = null;
 
-const userAgent = `Vencord-SyncVRChatStatus/${VERSION}`;
+const userAgent = `Vencord-SyncVRChatStatus/${VERSION} (https://github.com/lillithkt/Vencord-SyncVRChatStatus)`;
 
 function parseSetCookie(cookie: string) {
     // Add everything from cookie to cookies

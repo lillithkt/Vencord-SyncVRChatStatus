@@ -61,7 +61,6 @@ export default definePlugin({
     authors: [Devs.ImLvna],
     flux: {
         USER_SETTINGS_PROTO_UPDATE: (event: any) => {
-            console.log(event);
             const status: string | undefined = event.settings.proto.status?.customStatus?.text;
             if (status === lastDiscordStatus) return;
             lastDiscordStatus = status;

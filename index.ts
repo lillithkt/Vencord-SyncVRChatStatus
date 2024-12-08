@@ -73,14 +73,15 @@ export default definePlugin({
         await Native.logIn();
         lastVRChatStatus = await Native.getStatus();
 
-        this.interval = setInterval(async () => {
-            lastVRChatStatus = await Native.getStatus();
-            if (lastVRChatStatus === lastDiscordStatus) return;
-            setDiscordStatus(lastVRChatStatus, {
-                id: settings.store.emojiId,
-                name: settings.store.emojiName,
-            }, null);
-        }, 60 * 1000) as any;
+        this.interval = setInterval(this.syncVRCToDiscord, 60 * 1000) as any;
+    },
+    async syncVRCToDiscord() {
+        lastVRChatStatus = await Native.getStatus();
+        if (lastVRChatStatus === lastDiscordStatus) return;
+        setDiscordStatus(lastVRChatStatus, {
+            id: settings.store.emojiId,
+            name: settings.store.emojiName,
+        }, null);
     },
     stop() {
         if (this.interval) clearInterval(this.interval);

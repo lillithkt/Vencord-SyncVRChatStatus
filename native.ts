@@ -6,15 +6,22 @@
 
 import { RendererSettings } from "@main/settings";
 import { IpcMainInvokeEvent } from "electron";
-import { Secret, TOTP } from "otpauth";
-import { AuthenticationApi, Configuration, UsersApi } from "vrchat";
+import totp from "./totp";
+import { ComponentDispatch } from "@webpack/common";
 
-let authApi: AuthenticationApi | null = null;
-let usersApi: UsersApi | null = null;
+let cookies: string[] = [];
 let userId: string | null = null;
 
+const userAgent = `Vencord-SyncVRChatStatus/${VERSION}`;
+
+function parseSetCookie(cookie: string) {
+    // Add everything from cookie to cookies
+    cookies = cookies.concat(cookie.split(";"));
+}
+
 export async function logIn() {
-    if (authApi || usersApi || userId) return;
+    cookies = [];
+    userId = null;
     const settings = RendererSettings.store.plugins?.SyncVRChatStatus;
     const username = settings?.username;
     const password = settings?.password;
@@ -24,51 +31,64 @@ export async function logIn() {
         return;
     }
 
-    const config = new Configuration({
-        basePath: "https://api.vrchat.cloud/api/1",
-        username,
-        password,
-        baseOptions: {
-            headers: {
-                "User-Agent": `Vencord/${VERSION}`
-            }
+
+    await fetch("https://api.vrchat.cloud/api/1/auth/user", {
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "Authorization": `Basic ${btoa(`${encodeURIComponent(username)}:${encodeURIComponent(password)}`)}`
         }
+    }).then(async res => {
+        parseSetCookie(res.headers.get("set-cookie") || "");
+    });
+    await fetch("https://api.vrchat.cloud/api/1/auth/twofactorauth/totp/verify", {
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "Cookie": cookies.join(";")
+        },
+        method: "POST",
+        body: JSON.stringify({
+            code: await totp(totpKey)
+        })
+    }).then(async res => {
+        parseSetCookie(res.headers.get("set-cookie") || "");
     });
 
+    const user = await fetch("https://api.vrchat.cloud/api/1/auth/user", {
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "Cookie": cookies.join(";")
+        }
+    }).then(res => res.json());
+    userId = user.id;
 
-    authApi = new AuthenticationApi(config);
-    await authApi.getCurrentUser();
-    await authApi.verify2FA({
-        code: new TOTP({
-            algorithm: "SHA1",
-            digits: 6,
-            period: 30,
-            secret: Secret.fromBase32(totpKey)
-        }).generate()
-    });
-
-    try {
-        const user = await authApi.getCurrentUser();
-        userId = user.data.id;
-    } catch (e) {
-        console.error(e);
-        authApi = null;
-        usersApi = null;
-        userId = null;
-        throw e;
-    }
-    usersApi = new UsersApi(config);
 }
 
 export async function getStatus(): Promise<string | undefined> {
-    if (!authApi) return undefined;
-    const user = await authApi.getCurrentUser();
-    return user.data.statusDescription;
+    if (!cookies.length) return undefined;
+    const user = await fetch(`https://api.vrchat.cloud/api/1/auth/user`, {
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "Cookie": cookies.join(";")
+        }
+    }).then(res => res.json());
+    return user.statusDescription;
 }
 
 export async function setStatus(_: IpcMainInvokeEvent, status: string | undefined) {
-    if (!usersApi || !userId) return;
-    await usersApi.updateUser(userId, {
-        statusDescription: status
+    if (!cookies.length || !userId) return;
+    await fetch(`https://api.vrchat.cloud/api/1/users/${userId}`, {
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "Cookie": cookies.join(";")
+        },
+        method: "PUT",
+        body: JSON.stringify({
+            statusDescription: status
+        })
     });
 }

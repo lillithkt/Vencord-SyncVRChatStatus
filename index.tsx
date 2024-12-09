@@ -11,10 +11,10 @@ import { ModalContent, ModalFooter, ModalHeader, ModalRoot, openModal, openModal
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import { findByCodeLazy } from "@webpack";
 import { Button, useState } from "@webpack/common";
+import { default as setDiscordStatus } from "./status";
 
 const Native = VencordNative.pluginHelpers.SyncVRChatStatus as PluginNative<typeof import("./native")>;
 
-const setDiscordStatus = findByCodeLazy(".DONT_CLEAR?");
 
 let loggedIn = false;
 
@@ -62,6 +62,7 @@ const plugin = definePlugin({
     name: "SyncVRChatStatus",
     description: "Sync your VRChat status with Discord.",
     settings,
+    dependencies: ["UserSettingsAPI"],
     authors: [Devs.ImLvna],
     flux: {
         USER_SETTINGS_PROTO_UPDATE: (event: any) => {

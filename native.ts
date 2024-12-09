@@ -19,7 +19,7 @@ function parseSetCookie(cookie: string) {
     cookies = cookies.concat(cookie.split(";"));
 }
 
-export async function logIn() {
+export async function logIn(): Promise<string | null> {
     cookies = [];
     userId = null;
     const settings = RendererSettings.store.plugins?.SyncVRChatStatus;
@@ -28,7 +28,7 @@ export async function logIn() {
     const totpKey = settings?.totpKey;
     if (!username || !password || !totpKey) {
         console.error("Missing settings");
-        return;
+        return "Missing Settings";
     }
 
 
@@ -55,15 +55,26 @@ export async function logIn() {
         parseSetCookie(res.headers.get("set-cookie") || "");
     });
 
-    const user = await fetch("https://api.vrchat.cloud/api/1/auth/user", {
+    const userRes = await fetch("https://api.vrchat.cloud/api/1/auth/user", {
         headers: {
             "Content-Type": "application/json",
             "User-Agent": userAgent,
             "Cookie": cookies.join(";")
         }
-    }).then(res => res.json());
+    });
+    if (userRes.status === 429) {
+        return "Rate limited, try again later";
+    }
+    if (userRes.status === 401) {
+        return "Invalid Credentials";
+    }
+    const user = await userRes.json();
+    if (!user.id) {
+        return JSON.stringify(user);
+    }
     userId = user.id;
 
+    return null;
 }
 
 export async function getStatus(): Promise<string | undefined> {

@@ -5,13 +5,18 @@
  */
 
 import { definePluginSettings } from "@api/Settings";
+import { Flex } from "@components/Flex";
 import { Devs } from "@utils/constants";
+import { ModalContent, ModalFooter, ModalHeader, ModalRoot, openModal, openModalLazy } from "@utils/modal";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import { findByCodeLazy } from "@webpack";
+import { Button, useState } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.SyncVRChatStatus as PluginNative<typeof import("./native")>;
 
 const setDiscordStatus = findByCodeLazy(".DONT_CLEAR?");
+
+let loggedIn = false;
 
 const settings = definePluginSettings({
     emojiName: {
@@ -30,7 +35,6 @@ const settings = definePluginSettings({
         type: OptionType.STRING,
         default: "",
         description: "Your VRChat username.",
-        restartNeeded: true,
     },
     password: {
         type: OptionType.STRING,
@@ -49,12 +53,12 @@ const settings = definePluginSettings({
             type: "password",
         },
         restartNeeded: true,
-    },
+    }
 });
 
 let lastVRChatStatus: string | undefined = undefined;
 let lastDiscordStatus: string | undefined = undefined;
-export default definePlugin({
+const plugin = definePlugin({
     name: "SyncVRChatStatus",
     description: "Sync your VRChat status with Discord.",
     settings,
@@ -69,13 +73,46 @@ export default definePlugin({
         }
     },
     interval: null as any | null,
+    loginErrorModal(message: string) {
+        openModal(props => {
+            return <ModalRoot {...props}>
+                <ModalHeader>
+                    <Flex style={{ width: "100%", justifyContent: "center" }}>
+                        SyncVRChatStatus: Failed To Login
+                    </Flex>
+                </ModalHeader>
+                <ModalContent>
+                    <Flex style={{ width: "100%", justifyContent: "center" }}>
+                        {message}
+                    </Flex>
+                </ModalContent>
+                {message !== "Invalid Credentials" && <ModalFooter>
+                    <Flex style={{ width: "100%", justifyContent: "center" }}>
+                        <Button onClick={this.logIn}>Retry</Button>
+                    </Flex>
+                </ModalFooter>}
+
+            </ModalRoot>;
+        });
+    },
+
+    async logIn(): Promise<boolean> {
+        const error = await Native.logIn();
+        if (error) {
+            console.error("Failed to log in:", error);
+            this.loginErrorModal(error);
+            return false;
+        }
+        return true;
+    },
     async start() {
-        await Native.logIn();
-        lastVRChatStatus = await Native.getStatus();
+        if (!await this.logIn()) return;
+        await this.syncVRCToDiscord();
 
         this.interval = setInterval(this.syncVRCToDiscord, 60 * 1000) as any;
     },
     async syncVRCToDiscord() {
+
         lastVRChatStatus = await Native.getStatus();
         if (lastVRChatStatus === lastDiscordStatus) return;
         setDiscordStatus(lastVRChatStatus, {
@@ -87,3 +124,4 @@ export default definePlugin({
         if (this.interval) clearInterval(this.interval);
     },
 });
+export default plugin;

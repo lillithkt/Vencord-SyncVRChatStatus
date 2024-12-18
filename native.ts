@@ -6,8 +6,8 @@
 
 import { RendererSettings } from "@main/settings";
 import { IpcMainInvokeEvent } from "electron";
+
 import totp from "./totp";
-import { ComponentDispatch } from "@webpack/common";
 
 let cookies: string[] = [];
 let userId: string | null = null;
@@ -27,8 +27,7 @@ export async function logIn(): Promise<string | null> {
     const password = settings?.password;
     const totpKey = settings?.totpKey;
     if (!username || !password || !totpKey) {
-        console.error("Missing settings");
-        return "Missing Settings";
+        return "Missing username, password or TOTP key";
     }
 
 
@@ -79,7 +78,7 @@ export async function logIn(): Promise<string | null> {
 
 export async function getStatus(): Promise<string | undefined> {
     if (!cookies.length) return undefined;
-    const user = await fetch(`https://api.vrchat.cloud/api/1/auth/user`, {
+    const user = await fetch("https://api.vrchat.cloud/api/1/auth/user", {
         headers: {
             "Content-Type": "application/json",
             "User-Agent": userAgent,

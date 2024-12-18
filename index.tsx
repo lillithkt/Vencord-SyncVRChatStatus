@@ -7,16 +7,16 @@
 import { definePluginSettings } from "@api/Settings";
 import { Flex } from "@components/Flex";
 import { Devs } from "@utils/constants";
-import { ModalContent, ModalFooter, ModalHeader, ModalRoot, openModal, openModalLazy } from "@utils/modal";
+import { ModalContent, ModalFooter, ModalHeader, ModalRoot, openModal } from "@utils/modal";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
-import { findByCodeLazy } from "@webpack";
-import { Button, useState } from "@webpack/common";
+import { Button } from "@webpack/common";
+
 import { default as setDiscordStatus } from "./status";
 
 const Native = VencordNative.pluginHelpers.SyncVRChatStatus as PluginNative<typeof import("./native")>;
 
 
-let loggedIn = false;
+const loggedIn = false;
 
 const settings = definePluginSettings({
     username: {

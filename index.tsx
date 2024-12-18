@@ -19,18 +19,6 @@ const Native = VencordNative.pluginHelpers.SyncVRChatStatus as PluginNative<type
 let loggedIn = false;
 
 const settings = definePluginSettings({
-    emojiName: {
-        type: OptionType.STRING,
-        default: "heartRainbot",
-        description: "The emoji name to use for the Discord status.",
-        restartNeeded: false,
-    },
-    emojiId: {
-        type: OptionType.STRING,
-        default: "1134797813369274420",
-        description: "The emoji ID to use for the Discord status.",
-        restartNeeded: false,
-    },
     username: {
         type: OptionType.STRING,
         default: "",
@@ -116,10 +104,7 @@ const plugin = definePlugin({
 
         lastVRChatStatus = await Native.getStatus();
         if (lastVRChatStatus === lastDiscordStatus) return;
-        setDiscordStatus(lastVRChatStatus, {
-            id: settings.store.emojiId,
-            name: settings.store.emojiName,
-        }, null);
+        setDiscordStatus(lastVRChatStatus, null);
     },
     stop() {
         if (this.interval) clearInterval(this.interval);

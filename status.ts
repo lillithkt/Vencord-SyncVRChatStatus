@@ -16,15 +16,17 @@ interface Emoji {
     name: string;
 }
 
-export default function setStatus(text: string | undefined, emoji?: Emoji, expiration?: "TODAY" | number | null) {
+export default function setStatus(text: string | undefined, expiration?: "TODAY" | number | null) {
     const trimmedText = text?.trim();
 
-    if ((trimmedText?.length || 0) > 0 || emoji != null) {
+    const old = CustomStatus.getSetting();
+
+    if ((trimmedText?.length || 0) > 0 || old.emojiId != null) {
         CustomStatus.updateSetting({
             text: trimmedText!.length > 0 ? trimmedText : "",
             expiresAtMs: expiration != null ? String(getExpirationMs(expiration)) : "0",
-            emojiId: emoji?.id ?? "0",
-            emojiName: emoji?.name ?? "",
+            emojiId: old?.emojiId ?? "0",
+            emojiName: old?.emojiName ?? "",
             createdAtMs: String(Date.now())
         });
     } else {

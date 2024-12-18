@@ -11,11 +11,6 @@ function getExpirationMs(expiration: "TODAY" | number) {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
 }
 
-interface Emoji {
-    id: string | null;
-    name: string;
-}
-
 export default function setStatus(text: string | undefined, expiration?: "TODAY" | number | null) {
     const trimmedText = text?.trim();
 
